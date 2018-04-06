@@ -10,7 +10,7 @@ from keras.models import load_model
 from simple_cnn import *
 from utils import *
 
-def eval_cifar10(model_path, df_results, rgb=True):
+def eval_cifar10(model_path, df_results, rgb=True, n_gray_colors=None):
     num_classes = 10
     n_colors = [256, 128, 64, 32, 16, 8]
 
@@ -48,6 +48,10 @@ df_results = pd.DataFrame(columns=['model', 'color_space', 'n_colors', 'test_los
 
 model_paths = sorted(glob('saved_models/*.h5'))
 for mp in model_paths:
-    df_results = eval_cifar10(mp, df_results, rgb=('rgb' in mp))
+    if 'rgb' in mp:
+        df_results = eval_cifar10(mp, df_results, rgb=True)
+    else:
+        nc = int(mp.split('/')[-1].replace('simple_cifar10_gray', '').replace('.h5', ''))
+        df_results = eval_cifar10(mp, df_results, rgb=False, n_gray_colors=nc)
 
 df_results.to_csv('results_cifar10.csv')
