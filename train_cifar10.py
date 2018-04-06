@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from simple_cnn import *
