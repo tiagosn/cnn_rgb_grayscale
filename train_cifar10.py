@@ -4,14 +4,9 @@ import numpy as np
 
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
-from simple_cnn import *
 
-def as_quantized_double_gray(X_rgb_int, n_colors):
-    X_out = X_rgb_int.mean(axis=-1)//(256//n_colors)/n_colors
-    X_out /= ((n_colors-1)/n_colors)
-    X_out = np.expand_dims(X_out, axis=-1)
-    
-    return X_out
+from simple_cnn import *
+from utils import *
 
 def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
     batch_size = 32
