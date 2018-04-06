@@ -10,7 +10,7 @@ from keras.models import load_model
 from simple_cnn import *
 from utils import *
 
-def eval_cifar10(model_path, df_results, rgb=True, n_gray_colors=None):
+def eval_cifar10(model_path, df_results, rgb=True):
     num_classes = 10
     n_colors = [256, 128, 64, 32, 16, 8]
 
@@ -29,18 +29,18 @@ def eval_cifar10(model_path, df_results, rgb=True, n_gray_colors=None):
 
         loss, acc = model.evaluate(X_aux, y_test, verbose=1)
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'rgb', 256, loss, acc]      
-        print('model: %s, acc: %.2lf' % (model_path.split('/')[-1], acc))
+        print('[RGB] model: %s, acc: %.2lf' % (model_path.split('/')[-1], acc))
 
     for nc in n_colors:
         X_aux = X_test.copy()
         X_aux = X_aux.astype('float32')
-        X_aux = as_quantized_double_gray(X_aux, n_gray_colors)
+        X_aux = as_quantized_double_gray(X_aux, nc)
         if rgb:
             X_aux = gray2rgb(X_aux)
 
         loss, acc = model.evaluate(X_aux, y_test, verbose=1)
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'gray', nc, loss, acc]
-        print('model: %s, acc: %.2lf' % (model_path.split('/')[-1], acc))
+        print('[GRAY %d] model: %s, acc: %.2lf' % (nc, model_path.split('/')[-1], acc))
 
     return df_results
 
@@ -51,7 +51,7 @@ for mp in model_paths:
     if 'rgb' in mp:
         df_results = eval_cifar10(mp, df_results, rgb=True)
     else:
-        nc = int(mp.split('/')[-1].replace('simple_cifar10_gray', '').replace('.h5', ''))
-        df_results = eval_cifar10(mp, df_results, rgb=False, n_gray_colors=nc)
+        # nc = int(mp.split('/')[-1].replace('simple_cifar10_gray', '').replace('.h5', ''))
+        df_results = eval_cifar10(mp, df_results, rgb=False)
 
 df_results.to_csv('results_cifar10.csv')
