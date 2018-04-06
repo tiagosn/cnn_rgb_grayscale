@@ -42,6 +42,7 @@ def eval_cifar10(model_path, df_results, rgb=True):
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'gray', nc, loss, acc]
         print('[GRAY %d] model: %s, acc: %.2lf' % (nc, model_path.split('/')[-1], acc))
 
+    del model
     return df_results
 
 df_results = pd.DataFrame(columns=['model', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
@@ -54,4 +55,4 @@ for mp in model_paths:
         # nc = int(mp.split('/')[-1].replace('simple_cifar10_gray', '').replace('.h5', ''))
         df_results = eval_cifar10(mp, df_results, rgb=False)
 
-df_results.to_csv('results_cifar10.csv')
+df_results.to_csv('results_cifar10.csv', index=False)
