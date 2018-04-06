@@ -11,6 +11,7 @@ from simple_cnn import *
 from utils import *
 
 def eval_cifar10(model_path, df_results, rgb=True):
+    num_classes = 10
     n_colors = [256, 128, 64, 32, 16, 8]
 
     model = load_model(model_path)
@@ -47,6 +48,6 @@ df_results = pd.DataFrame(columns=['model', 'color_space', 'n_colors', 'test_los
 
 model_paths = sorted(glob('saved_models/*.h5'))
 for mp in model_paths:
-    df_results = eval_cifar10(model_path, df_results, rgb=('rgb' in mp))
+    df_results = eval_cifar10(mp, df_results, rgb=('rgb' in mp))
 
 df_results.to_csv('results_cifar10.csv')
