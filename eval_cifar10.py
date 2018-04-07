@@ -6,7 +6,8 @@ import pandas as pd
 from glob import glob
 from keras.datasets import cifar10
 from keras.models import load_model
-from sklearn.linear_model import LogisticRegression
+#from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
 
 from simple_cnn import *
 from utils import *
@@ -44,10 +45,13 @@ def eval_cifar10(model_path, df_results, rgb=True):
         X_f_train = model_features.predict(X_aux_train, batch_size=32)
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
 
-        lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1, random_state=42)
-        lr.fit(X_f_train, y_train_lr)
-        acc = lr.score(X_f_test, y_test_lr)
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'lr', 'rgb', 256, '-', acc]
+        # lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1, random_state=42)
+        # lr.fit(X_f_train, y_train_lr.reshape(-1))
+        # acc = lr.score(X_f_test, y_test_lr.reshape(-1))
+        svm_sgd = SGDClassifier(n_jobs=-1)
+        svm_sgd.fit(X_f_train, y_train_lr.reshape(-1))
+        acc = svm_sgd.score(X_f_test, y_test_lr.reshape(-1))
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'rgb', 256, '-', acc]
         print('[RGB] model: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], acc))
 
     for nc in n_colors:
