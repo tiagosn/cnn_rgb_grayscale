@@ -24,11 +24,11 @@ def eval_cifar10(model_path, df_results, rgb=True):
     model_features.pop()
 
     # load cifar-10
-    (X_train, y_train_lr), (X_test, y_test_lr) = cifar10.load_data()
+    (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
 
     # convert class vectors to binary class matrices
-    y_train = keras.utils.to_categorical(y_train_lr, num_classes)
-    y_test = keras.utils.to_categorical(y_test_lr, num_classes)
+    y_train = keras.utils.to_categorical(y_train_svm, num_classes)
+    y_test = keras.utils.to_categorical(y_test_svm, num_classes)
 
     if rgb:
         X_aux_train = X_train.copy()
@@ -46,24 +46,37 @@ def eval_cifar10(model_path, df_results, rgb=True):
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
 
         # lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1, random_state=42)
-        # lr.fit(X_f_train, y_train_lr.reshape(-1))
-        # acc = lr.score(X_f_test, y_test_lr.reshape(-1))
+        # lr.fit(X_f_train, y_train_svm.reshape(-1))
+        # acc = lr.score(X_f_test, y_test_svm.reshape(-1))
         svm_sgd = SGDClassifier(n_jobs=-1)
-        svm_sgd.fit(X_f_train, y_train_lr.reshape(-1))
-        acc = svm_sgd.score(X_f_test, y_test_lr.reshape(-1))
+        svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
+        acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'rgb', 256, '-', acc]
-        print('[RGB] model: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], acc))
+        print('[RGB] model: %s, acc: %.2lf' % ('SVM_'+model_path.split('/')[-1], acc))
 
     for nc in n_colors:
-        X_aux = X_test.copy()
-        X_aux = X_aux.astype('float32')
-        X_aux = as_quantized_double_gray(X_aux, nc)
+        X_aux_train = X_train.copy()
+        X_aux_train = X_aux_train.astype('float32')
+        X_aux_train = as_quantized_double_gray(X_aux_train, nc)
+        X_aux_test = X_test.copy()
+        X_aux_test = X_aux_test.astype('float32')
+        X_aux_test = as_quantized_double_gray(X_aux_test, nc)
         if rgb:
-            X_aux = gray2rgb(X_aux)
+            X_aux_train = gray2rgb(X_aux_train)
+            X_aux_test = gray2rgb(X_aux_test)
 
-        loss, acc = model.evaluate(X_aux, y_test, verbose=1)
+        loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'cnn', 'gray', nc, loss, acc]
         print('[GRAY %d] model: %s, acc: %.2lf' % (nc, model_path.split('/')[-1], acc))
+
+        X_f_train = model_features.predict(X_aux_train, batch_size=32)
+        X_f_test = model_features.predict(X_aux_test, batch_size=32)
+
+        svm_sgd = SGDClassifier(n_jobs=-1)
+        svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
+        acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'gray', nc, '-', acc]
+        print('[GRAY %d] model: %s, acc: %.2lf' % (nc, 'SVM_'+model_path.split('/')[-1], acc))
 
     return df_results
 
