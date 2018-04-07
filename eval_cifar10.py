@@ -52,7 +52,7 @@ def eval_cifar10(model_path, df_results, rgb=True):
         # lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1, random_state=42)
         # lr.fit(X_f_train, y_train_svm.reshape(-1))
         # acc = lr.score(X_f_test, y_test_svm.reshape(-1))
-        svm_sgd = SGDClassifier(n_jobs=-1)
+        svm_sgd = SGDClassifier(loss='log', n_jobs=-1)
         svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
         acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'rgb', 256, '-', acc]
@@ -76,7 +76,7 @@ def eval_cifar10(model_path, df_results, rgb=True):
         X_f_train = model_features.predict(X_aux_train, batch_size=32)
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
 
-        svm_sgd = SGDClassifier(n_jobs=-1)
+        svm_sgd = SGDClassifier(loss='log', n_jobs=-1)
         svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
         acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'gray', nc, '-', acc]
