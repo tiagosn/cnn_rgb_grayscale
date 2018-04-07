@@ -57,7 +57,7 @@ def eval_cifar10(model_path, df_results, rgb=True):
             X_aux = gray2rgb(X_aux)
 
         loss, acc = model.evaluate(X_aux, y_test, verbose=1)
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'gray', nc, loss, acc]
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'cnn', 'gray', nc, loss, acc]
         print('[GRAY %d] model: %s, acc: %.2lf' % (nc, model_path.split('/')[-1], acc))
 
     return df_results
