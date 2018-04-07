@@ -6,7 +6,6 @@ import resnet
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import LearningRateScheduler,  ReduceLROnPlateau
-from keras.callbacks import
 
 from all_conv_cnn import *
 from simple_cnn import *
