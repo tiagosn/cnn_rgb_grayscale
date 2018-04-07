@@ -9,10 +9,15 @@ from all_conv_cnn import *
 from simple_cnn import *
 from utils import *
 
+MODEL_INFO = {
+    'simple': {'batch_size': 32, 'n_epochs': 100},
+    'all_conv': {'batch_size': 128, 'n_epochs': 100}
+}
+
 def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
-    batch_size = 32
+    batch_size = MODEL_INFO[model_type]['batch_size']
     num_classes = 10
-    epochs = 100
+    epochs = MODEL_INFO[model_type]['n_epochs']
     
     save_dir = os.path.join(os.getcwd(), 'saved_models')
     model_name = '%s_cifar10_%s.h5' % (model_type, ('rgb' if rgb else 'gray'+str(n_gray_colors)))
