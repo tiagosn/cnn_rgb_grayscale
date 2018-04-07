@@ -23,11 +23,11 @@ def eval_cifar10(model_path, df_results, rgb=True):
     model_features.pop()
 
     # load cifar-10
-    (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+    (X_train, y_train_lr), (X_test, y_test_lr) = cifar10.load_data()
 
     # convert class vectors to binary class matrices
-    y_train = keras.utils.to_categorical(y_train, num_classes)
-    y_test = keras.utils.to_categorical(y_test, num_classes)
+    y_train = keras.utils.to_categorical(y_train_lr, num_classes)
+    y_test = keras.utils.to_categorical(y_test_lr, num_classes)
 
     if rgb:
         X_aux_train = X_train.copy()
@@ -44,9 +44,9 @@ def eval_cifar10(model_path, df_results, rgb=True):
         X_f_train = model_features.predict(X_aux_train, batch_size=32)
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
 
-        lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1)
-        lr.fit(X_f_train, y_train)
-        acc = lr.score(X_f_test, y_test)
+        lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1, random_state=42)
+        lr.fit(X_f_train, y_train_lr)
+        acc = lr.score(X_f_test, y_test_lr)
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'lr', 'rgb', 256, '-', acc]
         print('[RGB] model: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], acc))
 
