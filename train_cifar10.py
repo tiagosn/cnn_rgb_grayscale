@@ -1,23 +1,36 @@
 import os
 
 import numpy as np
+import resnet
 
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import LearningRateScheduler,  ReduceLROnPlateau
+from keras.callbacks import
 
 from all_conv_cnn import *
 from simple_cnn import *
 from utils import *
 
+# create resnet callbacks
+lr_scheduler = LearningRateScheduler(resnet.lr_schedule)
+lr_reducer = ReduceLROnPlateau(factor=np.sqrt(0.1),
+                               cooldown=0,
+                               patience=5,
+                               min_lr=0.5e-6)
+callbacks_resnet20 = [lr_reducer, lr_scheduler]
+
 MODEL_INFO = {
-    'simple': {'batch_size': 32, 'n_epochs': 100},
-    'all_conv': {'batch_size': 128, 'n_epochs': 100}
+    'simple'  : {'batch_size': 32,  'n_epochs': 100, 'callbacks': None},
+    'all_conv': {'batch_size': 128, 'n_epochs': 100, 'callbacks': None},
+    'resnet20': {'batch_size': 128, 'n_epochs': 200, 'callbacks': callbacks_resnet20}
 }
 
 def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
     batch_size = MODEL_INFO[model_type]['batch_size']
     num_classes = 10
     epochs = MODEL_INFO[model_type]['n_epochs']
+    callbacks = MODEL_INFO[model_type]['callbacks']
     
     save_dir = os.path.join(os.getcwd(), 'saved_models')
     model_name = '%s_cifar10_%s.h5' % (model_type, ('rgb' if rgb else 'gray'+str(n_gray_colors)))
@@ -68,6 +81,8 @@ def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
         model = create_simple_cnn(im_shape, 10)
     elif model_type == 'all_conv':
         model = create_all_conv_net_ref_c(im_shape, 10)
+    elif model_type == 'resnet20':
+        model = resnet.resnet_v2(im_shape, depth=20, num_classes=10)
     
     model.fit_generator(datagen.flow(X_train, y_train,
                                      batch_size=batch_size),
@@ -88,7 +103,7 @@ def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
     print('Test accuracy:', scores[1])
 
 
-models = ['all_conv']
+models = ['resnet20']
 n_colors = [256, 128, 64, 32, 16, 8]
 
 for m in models:
