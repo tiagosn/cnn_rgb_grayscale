@@ -60,6 +60,8 @@ def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
     model = None
     if model_type == 'simple':
         model = create_simple_cnn(im_shape, 10)
+    elif model_type == 'all_conv':
+        model = create_all_conv_net_ref_c(im_shape, 10)
     
     model.fit_generator(datagen.flow(X_train, y_train,
                                      batch_size=batch_size),
@@ -80,14 +82,13 @@ def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
     print('Test accuracy:', scores[1])
 
 
-
-models = ['simple']
+models = ['all_conv']
 n_colors = [256, 128, 64, 32, 16, 8]
 
-# train rgb model
-train_cifar10(model_type='simple', rgb=True, n_gray_colors=None)
-
-# train grayscale models
 for m in models:
+    # train rgb model
+    train_cifar10(model_type=m, rgb=True, n_gray_colors=None)
+
+    # train grayscale models
     for n in n_colors:
-        train_cifar10(model_type='simple', rgb=False, n_gray_colors=n)
+        train_cifar10(model_type=m, rgb=False, n_gray_colors=n)
