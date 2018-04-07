@@ -19,9 +19,13 @@ def eval_cifar10(model_path, df_results, rgb=True):
     model = load_model(model_path)
     
     model_features = load_model(model_path)
-    model_features.pop()
-    model_features.pop()
-    model_features.pop()
+    if 'simple' in model_path:
+        model_features.pop()
+        model_features.pop()
+        model_features.pop()
+    elif 'all_conv' in model_path:
+        model_features.pop()
+        model_features.pop()
 
     # load cifar-10
     (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
