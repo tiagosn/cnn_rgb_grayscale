@@ -23,9 +23,10 @@ def eval_cifar10(model_path, df_results, rgb=True):
     model_features.pop()
 
     # load cifar-10
-    (_, _), (X_test, y_test) = cifar10.load_data()
+    (X_trin, y_rtain), (X_test, y_test) = cifar10.load_data()
 
-    # convert class vectors to binary class matrices.
+    # convert class vectors to binary class matrices
+    y_train = keras.utils.to_categorical(y_train, num_classes)
     y_test = keras.utils.to_categorical(y_test, num_classes)
 
     if rgb:
