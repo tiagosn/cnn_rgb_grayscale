@@ -15,7 +15,7 @@ from utils import *
 #   - coarse: 20 classes
 #   - fine: 100 classes
 
-def eval_cifar10(model_path, ds_name, df_results, rgb=True):
+def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
     n_colors = [256, 128, 64, 32, 16, 8]
 
     model = load_model(model_path)
@@ -32,6 +32,8 @@ def eval_cifar10(model_path, ds_name, df_results, rgb=True):
         model_features = Model(model_features.input, model_features.layers[-2].output)
 
     # load dataset
+    X_train, X_test = None, None
+    y_train_svm, y_test_svm = None, None
     if ds_name == 'cifar10':
         (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
     elif ds_name == 'cifar100_fine':
@@ -45,15 +47,15 @@ def eval_cifar10(model_path, ds_name, df_results, rgb=True):
         y_train = keras.utils.to_categorical(y_train_svm, 10)
         y_test = keras.utils.to_categorical(y_test_svm, 10)
 
-    if rgb:
-        if ds_name == 'cifar10':
-            X_aux_train = X_train.copy()
-            X_aux_train = X_aux_train.astype('float32')
-            X_aux_train /= 255
-            X_aux_test = X_test.copy()
-            X_aux_test = X_aux_test.astype('float32')
-            X_aux_test /= 255
+    if rgb_model:
+        X_aux_train = X_train.copy()
+        X_aux_train = X_aux_train.astype('float32')
+        X_aux_train /= 255
+        X_aux_test = X_test.copy()
+        X_aux_test = X_aux_test.astype('float32')
+        X_aux_test /= 255
 
+        if ds_name == 'cifar10':
             loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
             df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'cnn', 'rgb', 256, loss, acc]      
             print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('CNN_'+model_path.split('/')[-1], ds_name, 'rgb', acc))
@@ -67,18 +69,18 @@ def eval_cifar10(model_path, ds_name, df_results, rgb=True):
         df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'lr', 'rgb', 256, '-', acc]
         print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], ds_name, 'rgb', acc))
 
-    for nc in n_colors:
-        if ds_name == 'cifar10':
-            X_aux_train = X_train.copy()
-            X_aux_train = X_aux_train.astype('float32')
-            X_aux_train = as_quantized_double_gray(X_aux_train, nc)
-            X_aux_test = X_test.copy()
-            X_aux_test = X_aux_test.astype('float32')
-            X_aux_test = as_quantized_double_gray(X_aux_test, nc)
-            if rgb:
-                X_aux_train = gray2rgb(X_aux_train)
-                X_aux_test = gray2rgb(X_aux_test)
+    for nc in n_colors:        
+        X_aux_train = X_train.copy()
+        X_aux_train = X_aux_train.astype('float32')
+        X_aux_train = as_quantized_double_gray(X_aux_train, nc)
+        X_aux_test = X_test.copy()
+        X_aux_test = X_aux_test.astype('float32')
+        X_aux_test = as_quantized_double_gray(X_aux_test, nc)
+        if rgb_model:
+            X_aux_train = gray2rgb(X_aux_train)
+            X_aux_test = gray2rgb(X_aux_test)
 
+        if ds_name == 'cifar10':
             loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
             df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'cnn', 'gray', nc, loss, acc]
             print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('CNN_'+model_path.split('/')[-1], ds_name, 'gray'+str(nc), acc))
@@ -95,14 +97,14 @@ def eval_cifar10(model_path, ds_name, df_results, rgb=True):
     return df_results
 
 
-ds_names = ['cifar10', 'cifar100_coarse', 'cifar100_fine']
+ds_names = ['cifar100_coarse', 'cifar100_fine', 'cifar10']
 model_paths = sorted(glob('saved_models/*.h5'))
 for ds in ds_names:
     df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
     for mp in model_paths:
         if 'rgb' in mp:
-            df_results = eval_cifar10(mp, ds, df_results, rgb=True)
+            df_results = eval_cifar10(mp, ds, df_results, rgb_model=True)
         else:
-            df_results = eval_cifar10(mp, ds, df_results, rgb=False)
+            df_results = eval_cifar10(mp, ds, df_results, rgb_model=False)
 
     df_results.to_csv('results_%s.csv' % (ds), index=False)
