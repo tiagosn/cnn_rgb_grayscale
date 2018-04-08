@@ -37,9 +37,9 @@ def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
     if ds_name == 'cifar10':
         (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
     elif ds_name == 'cifar100_fine':
-        (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
+        (X_train, y_train_svm), (X_test, y_test_svm) = cifar100.load_data(label_mode='fine')
     elif ds_name == 'cifar100_coarse':
-        (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='coarse')
+        (X_train, y_train_svm), (X_test, y_test_svm) = cifar100.load_data(label_mode='coarse')
 
     # convert class vectors to binary class matrices (only for cifar10)
     y_train, y_test = None, None
