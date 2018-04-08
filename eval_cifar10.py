@@ -4,17 +4,18 @@ import numpy as np
 import pandas as pd
 
 from glob import glob
-from keras.datasets import cifar10
-from keras.models import load_model
-from keras.models import Model
-#from sklearn.linear_model import LogisticRegression
+from keras.datasets import cifar10, cifar100
+from keras.models import Model, load_model
 from sklearn.linear_model import SGDClassifier
 
 from simple_cnn import *
 from utils import *
 
-def eval_cifar10(model_path, df_results, rgb=True):
-    num_classes = 10
+# Note on CIFAR-100 labels:
+#   - coarse: 20 classes
+#   - fine: 100 classes
+
+def eval_cifar10(model_path, ds_name, df_results, rgb=True):
     n_colors = [256, 128, 64, 32, 16, 8]
 
     model = load_model(model_path)
@@ -30,24 +31,32 @@ def eval_cifar10(model_path, df_results, rgb=True):
     elif 'resnet20' in model_path:
         model_features = Model(model_features.input, model_features.layers[-2].output)
 
-    # load cifar-10
-    (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
+    # load dataset
+    if ds_name == 'cifar10':
+        (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
+    elif ds_name == 'cifar100_fine':
+        (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
+    elif ds_name == 'cifar100_coarse':
+        (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='coarse')
 
-    # convert class vectors to binary class matrices
-    y_train = keras.utils.to_categorical(y_train_svm, num_classes)
-    y_test = keras.utils.to_categorical(y_test_svm, num_classes)
+    # convert class vectors to binary class matrices (only for cifar10)
+    y_train, y_test = None, None
+    if ds_name == 'cifar10':
+        y_train = keras.utils.to_categorical(y_train_svm, 10)
+        y_test = keras.utils.to_categorical(y_test_svm, 10)
 
     if rgb:
-        X_aux_train = X_train.copy()
-        X_aux_train = X_aux_train.astype('float32')
-        X_aux_train /= 255
-        X_aux_test = X_test.copy()
-        X_aux_test = X_aux_test.astype('float32')
-        X_aux_test /= 255
+        if ds_name == 'cifar10':
+            X_aux_train = X_train.copy()
+            X_aux_train = X_aux_train.astype('float32')
+            X_aux_train /= 255
+            X_aux_test = X_test.copy()
+            X_aux_test = X_aux_test.astype('float32')
+            X_aux_test /= 255
 
-        loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'cnn', 'rgb', 256, loss, acc]      
-        print('[RGB] model: %s, acc: %.2lf' % ('CNN_'+model_path.split('/')[-1], acc))
+            loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
+            df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'cnn', 'rgb', 256, loss, acc]      
+            print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('CNN_'+model_path.split('/')[-1], ds_name, 'rgb', acc))
 
         X_f_train = model_features.predict(X_aux_train, batch_size=32)
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
@@ -55,23 +64,24 @@ def eval_cifar10(model_path, df_results, rgb=True):
         svm_sgd = SGDClassifier(loss='log', max_iter=100, n_jobs=-1)
         svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
         acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'lr', 'rgb', 256, '-', acc]
-        print('[RGB] model: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], acc))
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'lr', 'rgb', 256, '-', acc]
+        print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], ds_name, 'rgb', acc))
 
     for nc in n_colors:
-        X_aux_train = X_train.copy()
-        X_aux_train = X_aux_train.astype('float32')
-        X_aux_train = as_quantized_double_gray(X_aux_train, nc)
-        X_aux_test = X_test.copy()
-        X_aux_test = X_aux_test.astype('float32')
-        X_aux_test = as_quantized_double_gray(X_aux_test, nc)
-        if rgb:
-            X_aux_train = gray2rgb(X_aux_train)
-            X_aux_test = gray2rgb(X_aux_test)
+        if ds_name == 'cifar10':
+            X_aux_train = X_train.copy()
+            X_aux_train = X_aux_train.astype('float32')
+            X_aux_train = as_quantized_double_gray(X_aux_train, nc)
+            X_aux_test = X_test.copy()
+            X_aux_test = X_aux_test.astype('float32')
+            X_aux_test = as_quantized_double_gray(X_aux_test, nc)
+            if rgb:
+                X_aux_train = gray2rgb(X_aux_train)
+                X_aux_test = gray2rgb(X_aux_test)
 
-        loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'cnn', 'gray', nc, loss, acc]
-        print('[GRAY %d] model: %s, acc: %.2lf' % (nc, model_path.split('/')[-1], acc))
+            loss, acc = model.evaluate(X_aux_test, y_test, verbose=1)
+            df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'cnn', 'gray', nc, loss, acc]
+            print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('CNN_'+model_path.split('/')[-1], ds_name, 'gray'+str(nc), acc))
 
         X_f_train = model_features.predict(X_aux_train, batch_size=32)
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
@@ -79,19 +89,20 @@ def eval_cifar10(model_path, df_results, rgb=True):
         svm_sgd = SGDClassifier(loss='log', max_iter=100, n_jobs=-1)
         svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
         acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'lr', 'gray', nc, '-', acc]
-        print('[GRAY %d] model: %s, acc: %.2lf' % (nc, 'LR_'+model_path.split('/')[-1], acc))
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], ds_name, 'lr', 'gray', nc, '-', acc]
+        print('model: %s, dataset: %s, colors: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], ds_name, 'gray'+str(nc), acc))
 
     return df_results
 
-df_results = pd.DataFrame(columns=['model', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
 
+ds_names = ['cifar10', 'cifar100_coarse', 'cifar100_fine']
 model_paths = sorted(glob('saved_models/*.h5'))
-for mp in model_paths:
-    if 'rgb' in mp:
-        df_results = eval_cifar10(mp, df_results, rgb=True)
-    else:
-        # nc = int(mp.split('/')[-1].replace('simple_cifar10_gray', '').replace('.h5', ''))
-        df_results = eval_cifar10(mp, df_results, rgb=False)
+for ds in ds_names:
+    df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
+    for mp in model_paths:
+        if 'rgb' in mp:
+            df_results = eval_cifar10(mp, ds, df_results, rgb=True)
+        else:
+            df_results = eval_cifar10(mp, ds, df_results, rgb=False)
 
-df_results.to_csv('results_cifar10.csv')
+    df_results.to_csv('results_%s.csv' % (ds), index=False)
