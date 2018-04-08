@@ -25,5 +25,9 @@ def load_fashion_mnist_32x32():
     X_train = np.pad(X_train, [(0, 0), (2, 2), (2, 2)], 'constant', constant_values=0)
     X_test = np.pad(X_test, [(0, 0), (2, 2), (2, 2)], 'constant', constant_values=0)
 
+    # expand dim (so the image has 1 channel)
+    X_train = np.expand_dims(X_train, axis=-1)
+    X_test = np.expand_dims(X_test, axis=-1)
+
     return (X_train, y_train), (X_test, y_test)
 
