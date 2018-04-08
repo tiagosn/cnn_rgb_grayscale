@@ -6,6 +6,7 @@ import pandas as pd
 from glob import glob
 from keras.datasets import cifar10
 from keras.models import load_model
+from keras.models import Model
 #from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 
@@ -26,6 +27,8 @@ def eval_cifar10(model_path, df_results, rgb=True):
     elif 'all_conv' in model_path:
         model_features.pop()
         model_features.pop()
+    elif 'resnet20' in model_path:
+        model_features = Model(model_features.input, model_features.layers[-2].output)
 
     # load cifar-10
     (X_train, y_train_svm), (X_test, y_test_svm) = cifar10.load_data()
@@ -49,14 +52,11 @@ def eval_cifar10(model_path, df_results, rgb=True):
         X_f_train = model_features.predict(X_aux_train, batch_size=32)
         X_f_test = model_features.predict(X_aux_test, batch_size=32)
 
-        # lr = LogisticRegression(solver='saga', multi_class='multinomial', n_jobs=-1, random_state=42)
-        # lr.fit(X_f_train, y_train_svm.reshape(-1))
-        # acc = lr.score(X_f_test, y_test_svm.reshape(-1))
         svm_sgd = SGDClassifier(loss='log', max_iter=100, n_jobs=-1)
         svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
         acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'rgb', 256, '-', acc]
-        print('[RGB] model: %s, acc: %.2lf' % ('SVM_'+model_path.split('/')[-1], acc))
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'lr', 'rgb', 256, '-', acc]
+        print('[RGB] model: %s, acc: %.2lf' % ('LR_'+model_path.split('/')[-1], acc))
 
     for nc in n_colors:
         X_aux_train = X_train.copy()
@@ -79,8 +79,8 @@ def eval_cifar10(model_path, df_results, rgb=True):
         svm_sgd = SGDClassifier(loss='log', max_iter=100, n_jobs=-1)
         svm_sgd.fit(X_f_train, y_train_svm.reshape(-1))
         acc = svm_sgd.score(X_f_test, y_test_svm.reshape(-1))
-        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'svm', 'gray', nc, '-', acc]
-        print('[GRAY %d] model: %s, acc: %.2lf' % (nc, 'SVM_'+model_path.split('/')[-1], acc))
+        df_results.loc[len(df_results)] = [model_path.split('/')[-1], 'lr', 'gray', nc, '-', acc]
+        print('[GRAY %d] model: %s, acc: %.2lf' % (nc, 'LR_'+model_path.split('/')[-1], acc))
 
     return df_results
 
