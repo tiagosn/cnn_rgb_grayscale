@@ -40,6 +40,8 @@ def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
         (X_train, y_train_svm), (X_test, y_test_svm) = cifar100.load_data(label_mode='fine')
     elif ds_name == 'cifar100_coarse':
         (X_train, y_train_svm), (X_test, y_test_svm) = cifar100.load_data(label_mode='coarse')
+    elif ds_name == 'fashion_mnist':
+        (X_train, y_train_svm), (X_test, y_test_svm) = load_fashion_mnist_32x32()
 
     # convert class vectors to binary class matrices (only for cifar10)
     y_train, y_test = None, None
@@ -97,7 +99,7 @@ def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
     return df_results
 
 
-ds_names = ['cifar100_coarse', 'cifar100_fine', 'cifar10']
+ds_names = ['fashion_mnist', 'cifar100_coarse', 'cifar100_fine', 'cifar10']
 model_paths = sorted(glob('saved_models/*.h5'))
 for ds in ds_names:
     df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
