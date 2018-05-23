@@ -102,7 +102,7 @@ def train_cifar10(model_type='simple', rgb=True, n_gray_colors=None):
     print('Test accuracy:', scores[1])
 
 
-models = ['resnet20']
+models = ['simple', 'all_conv', 'resnet20']
 n_colors = [256, 128, 64, 32, 16, 8]
 
 for m in models:
