@@ -15,8 +15,10 @@ from utils import *
 #   - coarse: 20 classes
 #   - fine: 100 classes
 
-def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
+def eval_cifar10(model_path, ds_name, df_results, rgb_model=True, noise_level=None):
     n_colors = [256, 128, 64, 32, 16, 8]
+    if noise_level is not None:
+        n_colors = [256]
 
     model = load_model(model_path)
     
@@ -41,7 +43,11 @@ def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
     elif ds_name == 'cifar100_coarse':
         (X_train, y_train_svm), (X_test, y_test_svm) = cifar100.load_data(label_mode='coarse')
     elif ds_name == 'fashion_mnist':
-        (X_train, y_train_svm), (X_test, y_test_svm) = load_fashion_mnist_32x32()
+        if noise_level is None:
+            (X_train, y_train_svm), (X_test, y_test_svm) = load_fashion_mnist_32x32()
+        else:
+            (X_train, y_train_svm), (X_test, y_test_svm) = load_fashion_mnist_32x32(noise_level)
+            ds_name = '%s-%d' % (ds_name, noise_level)
 
     # convert class vectors to binary class matrices (only for cifar10)
     y_train, y_test = None, None
@@ -98,15 +104,25 @@ def eval_cifar10(model_path, ds_name, df_results, rgb_model=True):
 
     return df_results
 
-
-ds_names = ['fashion_mnist', 'cifar100_coarse', 'cifar100_fine', 'cifar10']
+# ds_names = ['fashion_mnist', 'cifar100_coarse', 'cifar100_fine', 'cifar10']
 model_paths = sorted(glob('saved_models/*.h5'))
-for ds in ds_names:
-    df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
+# for ds in ds_names:
+#     df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
+#     for mp in model_paths:
+#         if 'rgb' in mp:
+#             df_results = eval_cifar10(mp, ds, df_results, rgb_model=True)
+#         else:
+#             df_results = eval_cifar10(mp, ds, df_results, rgb_model=False)
+
+#     df_results.to_csv('results_%s.csv' % (ds), index=False)
+
+df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
+noise_levels = [10, 20, 30]
+for nl in noise_levels:
     for mp in model_paths:
         if 'rgb' in mp:
-            df_results = eval_cifar10(mp, ds, df_results, rgb_model=True)
+            df_results = eval_cifar10(mp, 'fashion_mnist', df_results, rgb_model=True, noise_level=nl)
         else:
-            df_results = eval_cifar10(mp, ds, df_results, rgb_model=False)
+            df_results = eval_cifar10(mp, 'fashion_mnist', df_results, rgb_model=False, noise_level=nl)
 
-    df_results.to_csv('results_%s.csv' % (ds), index=False)
+df_results.to_csv('results_fashion_mnist-noise.csv', index=False)
