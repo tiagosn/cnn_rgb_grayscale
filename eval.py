@@ -104,17 +104,17 @@ def eval_cifar10(model_path, ds_name, df_results, rgb_model=True, noise_level=No
 
     return df_results
 
-# ds_names = ['fashion_mnist', 'cifar100_coarse', 'cifar100_fine', 'cifar10']
+ds_names = ['fashion_mnist', 'cifar100_coarse', 'cifar100_fine', 'cifar10']
 model_paths = sorted(glob('saved_models/*.h5'))
-# for ds in ds_names:
-#     df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
-#     for mp in model_paths:
-#         if 'rgb' in mp:
-#             df_results = eval_cifar10(mp, ds, df_results, rgb_model=True)
-#         else:
-#             df_results = eval_cifar10(mp, ds, df_results, rgb_model=False)
+for ds in ds_names:
+    df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
+    for mp in model_paths:
+        if 'rgb' in mp:
+            df_results = eval_cifar10(mp, ds, df_results, rgb_model=True)
+        else:
+            df_results = eval_cifar10(mp, ds, df_results, rgb_model=False)
 
-#     df_results.to_csv('results_%s.csv' % (ds), index=False)
+    df_results.to_csv('results_%s.csv' % (ds), index=False)
 
 df_results = pd.DataFrame(columns=['model', 'dataset', 'clf', 'color_space', 'n_colors', 'test_loss', 'test_acc'])
 noise_levels = [10, 20, 30]
